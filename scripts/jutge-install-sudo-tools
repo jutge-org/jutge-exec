@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+
+# This script is meant to be used inside the container
+# in order to install the latest version of jutge-vinga
+# and jutge-somhi.
+
+
+if [ "$1" == "-h" ] || [ "$1" == "--help" ] ; then
+    echo "This script installs the latest version of jutge-vinga and jutge-somhi."
+    exit 0
+fi
+
+sudo wget -O /usr/local/bin/jutge-vinga https://github.com/jutge-org/jutge-vinga-bin/raw/master/jutge-vinga-linux
+sudo wget -O /usr/local/bin/jutge-somhi https://raw.githubusercontent.com/jutge-org/jutge-toolkit/master/scripts/jutge-somhi
+
+sudo chown root:root /usr/local/bin/jutge-vinga
+sudo chmod 700 /usr/local/bin/jutge-vinga
+
+sudo chown root:root /usr/local/bin/jutge-somhi
+sudo chmod 700 /usr/local/bin/jutge-somhi
+
+ls -la /usr/local/bin/jutge-vinga
+ls -la /usr/local/bin/jutge-somhi
+
+echo "worker ALL=(ALL) NOPASSWD: /usr/local/bin/jutge-vinga" | (sudo su -c 'EDITOR="tee -a" visudo -f /etc/sudoers.d/worker')
+echo "worker ALL=(ALL) NOPASSWD: /usr/local/bin/jutge-somhi" | (sudo su -c 'EDITOR="tee -a" visudo -f /etc/sudoers.d/worker')

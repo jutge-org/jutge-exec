@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+
+# This script is meant to be used inside the container
+# in order to process submissions through std files.
+#
+# The only parameter it receives is the submission name.
+#
+# It read a submission from stdin (ie, a tar archive with driver.tgz,
+# problem.tgz and submission.tgz) and writes a correction (a tgz archive)
+# to stdout and log data to stderr.
+
+name=$1
+ulimit -t 310
+umask 077
+mkdir $name
+cd $name
+tar xf -
+chmod -R u+rwX,go-rwx .
+timeout 320 jutge-start $name
+cd correction
+jutge-sanitize
+tar czf - *
+cd ../..
+rm -rf $name

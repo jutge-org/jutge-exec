@@ -1,0 +1,50 @@
+#!/bin/bash
+
+# This script runs the run command in the current directory as nobody.
+# Eg: > sudo jutge-somhi 
+#
+# First, the directory ownership is tranfered to nobody.
+# Afterwards, all symlinks  removed.
+# Then, the run command is executed inside the directory, ran by nobody
+# with only a few environment variables, and under some ulimits and timeouts set.
+# Again, all symlinks are removed.
+# Finally, the directory ownership is transfered back to the original user
+# with -rwX------ permissions.
+#
+# This script should be installed at /usr/local/bin/jutge-somhi
+# with -rwx------ 1 root root permissions.
+# Use visudo -f /etc/sudoers.d/worker to allow worker user to use adding this line:
+# worker ALL=(ALL) NOPASSWD: /usr/local/bin/jutge-somhi
+
+    
+
+# user:group who originally owns the directory
+owner=`stat -c "%U:%G" .`
+
+# PATH that will be set 
+newpath="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+
+# ulimits
+maxoutput=1000000
+maxtime=60
+maxprocs=1000
+
+# timeout
+timeout=65
+
+# change directory ownership to nobody
+chown --recursive nobody:nogroup .
+
+# remove all symlinks
+jutge-sanitize
+
+# launch run 
+su --shell /bin/bash nobody --command "ulimit -c 0 -f $maxoutput -t $maxtime -u $maxprocs && env --ignore-environment PATH=\"$newpath\" LANG=C.UTF-8 USER=nobody timeout $timeout ./run"
+
+# remove all special files
+jutge-sanitize
+
+# change directory ownership back to original user
+chown --recursive "$owner" .
+chmod --recursive u=rwX,g=,o= .
+
