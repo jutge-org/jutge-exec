@@ -11,7 +11,7 @@ if [ "$1" == "-h" ] || [ "$1" == "--help" ] ; then
 fi
 
 sudo wget -O /usr/local/bin/jutge-vinga https://github.com/jutge-org/jutge-vinga-bin/raw/master/jutge-vinga-linux
-sudo wget -O /usr/local/bin/jutge-somhi https://raw.githubusercontent.com/jutge-org/jutge-toolkit/master/scripts/jutge-somhi
+sudo wget -O /usr/local/bin/jutge-somhi https://raw.githubusercontent.com/jutge-org/jutge-server-toolkit/master/scripts/jutge-somhi
 
 sudo chown root:root /usr/local/bin/jutge-vinga
 sudo chmod 700 /usr/local/bin/jutge-vinga
