@@ -1,5 +1,13 @@
 #!/bin/bash
 
+#
+# FIXME: As per this link https://askubuntu.com/a/674397/1721726, using the 'nobody' 
+# user is not a good idea. The reason is that many inferred from the name that this
+# user was intended to be used as an unpriviliged user, but it is not. This 
+# account is used by NFS and has permissions for NFS. Therefore, we should create
+# a user with the specific permissions we need.
+#
+
 # This script runs the run command in the current directory as nobody.
 # Eg: > sudo jutge-somhi 
 #
