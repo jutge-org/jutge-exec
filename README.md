@@ -2,7 +2,7 @@
 
 ![Logo](documentation/jutge-toolkit.png)
 
-This package is intended for the server side of the Jutge.org platform. It is not mean for the general public, but for the Jutge.org team.
+This package is intended for the server side of the Jutge.org platform. It is not meant for the general public, only for the Jutge.org team.
 
 ## Credits
 
