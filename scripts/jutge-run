@@ -17,8 +17,14 @@ EOF
     exit
 fi
 
+#
+# TODO(pauek): The image to use here should be a parameter, so that the 
+#   submission process can switch images easily. This makes it possible 
+#   to use special images for individual compilers and not depend on a 
+#   big image which is more difficult to update.
+#
 # Find out the version of the Docker image to use
-for candidate in server full lite; do
+for candidate in full server lite test; do
     docker image inspect jutge-org/$candidate > /dev/null 2>&1
     if [ $? -eq 0 ]; then
         version="$candidate"
@@ -26,14 +32,18 @@ for candidate in server full lite; do
     fi
 done
 if [ -z "$version" ]; then
-    version='jutge.org-lite'
+    echo "No image version found"
+    exit 1
 fi
+echo "Using image:" $version
 
 # Determine running options:
 # - jail: no network, limited memory and CPU (for "jutge-submit")
 # - term: interactive terminal
 # - volume: mount current directory
 # - user: run as the current user
+#
+# NOTE(pauek): Having 'jutge-submit' as a special case is confusing.
 #
 if [ $1 == 'jutge-submit' ]; then
     jail="--network none --memory=1g --cpus=1"
@@ -42,11 +52,11 @@ else
     if [ -t 1 ]; then # check if stdout is a TTY
         term="-t"
     fi
-    # ???
-    if [ $1 != 'bash' ]; then
+    # if [ $1 != 'bash' ]; then
         user="-u $(id -u):$(id -g)"
-    fi
+    # fi
 fi
 
 # Run it
+echo "docker run --rm -i $term $jail $user $volume jutge-org/$version $@"
 docker run --rm -i $term $jail $user $volume jutge-org/$version $@
