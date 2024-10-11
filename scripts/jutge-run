@@ -19,7 +19,7 @@ fi
 
 # Find out the version of the Docker image to use
 for candidate in server full lite; do
-    docker image inspect jutge.org:$candidate > /dev/null 2>&1
+    docker image inspect jutge-org/$candidate > /dev/null 2>&1
     if [ $? -eq 0 ]; then
         version="$candidate"
         break
@@ -49,4 +49,4 @@ else
 fi
 
 # Run it
-docker run --rm -i $term $jail $user $volume jutge.org:$version $@
+docker run --rm -i $term $jail $user $volume jutge-org/$version $@
