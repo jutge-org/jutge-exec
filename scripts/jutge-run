@@ -35,7 +35,6 @@ if [ -z "$version" ]; then
     echo "No image version found"
     exit 1
 fi
-echo "Using image:" $version
 
 # Determine running options:
 # - jail: no network, limited memory and CPU (for "jutge-submit")
@@ -58,5 +57,4 @@ else
 fi
 
 # Run it
-echo "docker run --rm -i $term $jail $user $volume jutge-org/$version $@"
 docker run --rm -i $term $jail $user $volume jutge-org/$version $@
