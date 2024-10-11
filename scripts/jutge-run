@@ -1,54 +1,52 @@
 #!/usr/bin/env bash
 
-
-if [ -z "$1" ] || [ "$1" = '-h' ] || [ "$1" = '--help' ]
-then
+if [ -z "$1" ] || [ "$1" = '-h' ] || [ "$1" = '--help' ]; then
     fmt <<EOF
 
-This script provides a way to execute commands in a container using one of the
-Jutge images.
+Usage: jutge-run <command> [args...]
 
-By default, the script runs the given commands in the container, after mounting
-the current working directory as the worker user in the container. But, when \$1
-is jutge-submit, the current directory is not mounted and all communication is
-expected to be through pipes.
+Execute commands in a container using one of the Jutge images.
+
+By default, it maps the current directory as /home/worker in the 
+container, and runs "<command> args...".
+
+However, if <command> is "jutge-submit", the current directory is NOT
+mounted and all communication is expected to be through pipes.
 
 EOF
     exit
 fi
 
-for jutge_version in jutge-server jutge-full jutge-lite jutge-test
-do
-    ver="$(docker image ls | awk '{print $1}' | grep $jutge_version | tail -1)"
-    if [ "$ver" ]
-    then
-        selected_version="$ver"
+# Find out the version of the Docker image to use
+for candidate in server full lite; do
+    docker image inspect jutge.org:$candidate > /dev/null 2>&1
+    if [ $? -eq 0 ]; then
+        version="$candidate"
         break
     fi
 done
-
-if [ -z "$selected_version" ]
-then
-    selected_version='jutgeorg/jutge-lite'
+if [ -z "$version" ]; then
+    version='jutge.org-lite'
 fi
 
-jail="--network none --memory=1g --cpus=1"
-
-if [ $1 == 'jutge-submit' ]
-then
-    docker run --rm -i $jail $selected_version $@
+# Determine running options:
+# - jail: no network, limited memory and CPU (for "jutge-submit")
+# - term: interactive terminal
+# - volume: mount current directory
+# - user: run as the current user
+#
+if [ $1 == 'jutge-submit' ]; then
+    jail="--network none --memory=1g --cpus=1"
 else
-    if [ -t 1 ]     # check if stdout is a TTY
-    then
-        flag_term="-it"
-    else
-        flag_term="-i"
+    volume="-v $(pwd):/home/worker"
+    if [ -t 1 ]; then # check if stdout is a TTY
+        term="-t"
     fi
-
-    if [ $1 == 'bash' ]
-    then
-        docker run --rm $flag_term -v $(pwd):/home/worker $selected_version $@
-    else
-        docker run --rm $flag_term -v $(pwd):/home/worker -u $(id -u):$(id -g) $selected_version $@
+    # ???
+    if [ $1 != 'bash' ]; then
+        user="-u $(id -u):$(id -g)"
     fi
 fi
+
+# Run it
+docker run --rm -i $term $jail $user $volume jutge.org:$version $@
