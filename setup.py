@@ -29,8 +29,8 @@ setup(
         ]
     },
     scripts=[
-        'scripts/jutge-run',
         'scripts/jutge-submit',
+		'scripts/jutge-somhi',
         'scripts/jutge-install-sudo-tools',
     ]
 )
