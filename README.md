@@ -1,4 +1,4 @@
-# Server Toolkit for Jutge.org
+# Jutge-run inside the container
 
 ![Logo](documentation/jutge-toolkit.png)
 
