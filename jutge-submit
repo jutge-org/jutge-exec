@@ -9,6 +9,8 @@
 # problem.tgz and submission.tgz) and writes a correction (a tgz archive)
 # to stdout and log data to stderr.
 
+set -e
+
 name=$1
 ulimit -t 310
 umask 077
