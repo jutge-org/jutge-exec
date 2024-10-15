@@ -15,9 +15,11 @@ sudo wget -O /usr/local/bin/jutge-somhi https://raw.githubusercontent.com/jutge-
 
 sudo chown root:root /usr/local/bin/jutge-vinga
 sudo chmod 700 /usr/local/bin/jutge-vinga
+sudo chmod u+s /usr/local/bin/jutge-vinga
 
 sudo chown root:root /usr/local/bin/jutge-somhi
 sudo chmod 700 /usr/local/bin/jutge-somhi
+sudo chmod u+s /usr/local/bin/jutge-somhi
 
 ls -la /usr/local/bin/jutge-vinga
 ls -la /usr/local/bin/jutge-somhi
