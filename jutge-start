@@ -9,26 +9,20 @@ import argparse
 import logging
 import os
 import resource
-import shutil
 import socket
 import subprocess
 import sys
 import tarfile
 
 
-def get_username():
-    return os.getenv("USER")
-
-
-def get_hostname():
-    return socket.gethostname()
+USERNAME = os.getenv("USER")
+HOSTNAME = socket.gethostname()
 
 
 def init_logging():
     """Configures custom logging options."""
-
     logging.basicConfig(
-        format="%s@%s " % (get_username(), get_hostname())
+        format="%s@%s " % (USERNAME, HOSTNAME)
         + "%(asctime)s %(levelname)s %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
     )
@@ -63,22 +57,6 @@ def extract_tgz(name, path):
     tar.close()
 
 
-def mkdir(path):
-    """Makes the directory path. Does not complain on error."""
-    try:
-        os.makedirs(path)
-    except OSError:
-        pass
-
-
-def del_dir(path):
-    """Deletes the directory path. Does not complain on error."""
-    try:
-        shutil.rmtree(path)
-    except OSError:
-        pass
-
-
 def main():
     """main"""
 
@@ -97,61 +75,47 @@ def main():
     if wrapping:
         logging.info("starting correction")
         logging.info("cwd=%s" % os.getcwd())
-        logging.info("user=%s" % get_username())
-        logging.info("host=%s" % get_hostname())
+        logging.info("user=%s" % USERNAME)
+        logging.info("host=%s" % HOSTNAME)
 
-        logging.info("setting ulimits")
-        resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
-        resource.setrlimit(resource.RLIMIT_CPU, (300, 300))
-        
+        logging.info("setting resource limits")
+
         # FIXME(pauek): Determine the ideal number of processes to set here
         #
-		# `setrlimit` counts processes by user, and will count existing processes
-		# in the kernel (which is actually on the host, since Docker is NOT a virtual 
-		# machine), so the number of processes we set here is NOT the amount of
+        # `setrlimit` counts processes by user, and will count existing processes
+        # in the kernel (which is actually on the host, since Docker is NOT a virtual
+        # machine), so the number of processes we set here is NOT the amount of
         # processes created by ourselves, but the total for the current user
-        # (with whatever processes were running before). 
+        # (with whatever processes were running before).
         # So here we should be setting a high-water mark, like the maximum of processes
         # that we expect ever to have, so that a fork bomb would crash but normal
         # programs would not.
         #
         # resource.setrlimit(resource.RLIMIT_NPROC, (1000, 1000))
 
+        limits = [
+            (resource.RLIMIT_CORE, (0, 0)),
+            (resource.RLIMIT_CPU, (300, 300)),
+            # (resource.RLIMIT_NPROC, (2048, 2048)),
+        ]
+        for a, b in limits:
+            resource.setrlimit(a, b)
+
         logging.info("setting umask")
         os.umask(0o077)
 
-        logging.info("decompressing submission")
-        del_dir("submission")
-        mkdir("submission")
-        extract_tgz("submission.tgz", "submission")
+        for part in ["submission", "problem", "driver"]:
+            logging.info("decompressing %s" % part)
+            os.mkdir(part)
+            extract_tgz("%s.tgz" % part, part)
 
-        logging.info("decompressing problem")
-        del_dir("problem")
-        mkdir("problem")
-        extract_tgz("problem.tgz", "problem")
+        for dir in ["solution", "correction"]:
+            logging.info("mkdir %s", dir)
+            os.mkdir(dir)
 
-        logging.info("decompressing driver")
-        del_dir("driver")
-        mkdir("driver")
-        extract_tgz("driver.tgz", "driver")
+        os.sync()
 
-        logging.info("mkdir solution")
-        del_dir("solution")
-        mkdir("solution")
-
-        logging.info("mkdir correction")
-        del_dir("correction")
-        mkdir("correction")
-
-    a, b = resource.getrlimit(resource.RLIMIT_NPROC)
-    logging.info("getrlimit(NPROC) = %s, %s" % (a, b))
-    a, b = resource.getrlimit(resource.RLIMIT_STACK)
-    logging.info("getrlimit(STACK) = %s, %s" % (a, b))
-    a, b = resource.getrlimit(resource.RLIMIT_DATA)
-    logging.info("getrlimit(DATA) = %s, %s" % (a, b))
-    a, b = resource.getrlimit(resource.RLIMIT_CPU)
-    logging.info("getrlimit(CPU) = %s, %s" % (a, b))
-
+    ## Execution of the driver
     command = ["python3", "driver/judge.py", args.name]
     logging.info("executing %s" % " ".join(command))
     process = subprocess.Popen(
@@ -170,6 +134,9 @@ def main():
     return_code = process.returncode
 
     logging.info("execution finished with return_code = %d" % return_code)
+    if return_code != 0:
+        logging.info("stdout: %s" % stdout)
+        logging.info("stderr: %s" % stderr)
 
     os.rename("stderr.txt", "correction/stderr.txt")
     os.rename("stdout.txt", "correction/stdout.txt")
@@ -187,6 +154,7 @@ def main():
     sys.stdout.close()
     sys.stderr.close()
     sys.stdin.close()
+
     # noinspection PyProtectedMember
     os._exit(0)
 
