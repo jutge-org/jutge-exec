@@ -103,6 +103,18 @@ def main():
         logging.info("setting ulimits")
         resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
         resource.setrlimit(resource.RLIMIT_CPU, (300, 300))
+        
+        # FIXME(pauek): Determine the ideal number of processes to set here
+        #
+		# `setrlimit` counts processes by user, and will count existing processes
+		# in the kernel (which is actually on the host, since Docker is NOT a virtual 
+		# machine), so the number of processes we set here is NOT the amount of
+        # processes created by ourselves, but the total for the current user
+        # (with whatever processes were running before). 
+        # So here we should be setting a high-water mark, like the maximum of processes
+        # that we expect ever to have, so that a fork bomb would crash but normal
+        # programs would not.
+        #
         # resource.setrlimit(resource.RLIMIT_NPROC, (1000, 1000))
 
         logging.info("setting umask")
