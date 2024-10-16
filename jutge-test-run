@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+
+function usage() {
+	fmt <<EOF
+
+Usage: jutge-test-run <image-name> <command> [args...]
+
+    Execute commands in a container using one of the Jutge images.
+
+    The <image-name> will be prefixed with "jutge-org/" (so you don't need
+	to include it). Available images are stored at the GitHub package registry
+	(https://github.com/orgs/jutge-org/packages). 
+
+	Example <image-name>s: "gcc", "python", "java", "haskell" and "extra".
+
+    This test version maps the current directory as /home/worker in the 
+    container, sets the UID to the current user (to avoid permission issues)
+	and starts the command interactively.
+
+EOF
+}
+
+if [ "$#" -lt 2 ] || [ "$1" = '-h' ] || [ "$1" = '--help' ] || [ "$2" = '-h' ] || [ "$2" = '--help' ]; then
+	usage
+	exit
+fi
+
+image="$1"
+shift # consume first argument so that $@ contains the rest
+
+if [ -t 1 ]; then # check if stdout is a TTY
+	term="-t"
+fi
+volume="-v $(pwd):/home/worker"
+user="-u $(id -u):$(id -g)"
+
+# Run it
+docker run --rm -i $term $jail $user $volume jutge-org/$image $@

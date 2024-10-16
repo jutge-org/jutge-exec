@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+
+function usage() {
+	fmt <<EOF
+
+Usage: jutge-run <image-name> [args...]
+
+    Execute commands in a container using one of the Jutge images.
+
+    The <image-name> will be prefixed with "jutge-org/" (so you don't need
+	to include it). Available images are stored at the GitHub package registry
+	(https://github.com/orgs/jutge-org/packages). 
+
+	Example <image-name>s: "gcc", "python", "java", "haskell" and "extra".
+
+    This is the production version, so the current directory is NOT 
+	mounted and all communication is expected to be through pipes.
+	The command executed inside the container is "jutge-submit", so 
+	any arguments will be passed to it.
+
+EOF
+}
+
+if [ "$#" -lt 1 ] || [ "$1" = '-h' ] || [ "$1" = '--help' ]; then
+	usage
+	exit
+fi
+
+image="$1"
+shift # consume 1st argument so that $@ contains the rest
+
+# Run it
+docker run --rm -i \
+	--network none \
+	--memory=1g \
+	--cpus=1 \
+	jutge-org/$image \
+	jutge-submit $@
