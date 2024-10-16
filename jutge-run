@@ -8,7 +8,8 @@ Usage: jutge-run <image-name> [args...]
     Execute commands in a container using one of the Jutge images.
 
     The <image-name> will be prefixed with "jutgeorg/" (so you don't need
-	to include it). Available images are stored at Docker Hub.
+	to include it). Available images are stored at Docker Hub
+	(https://hub.docker.com/u/jutgeorg).
 
 	Example <image-name>s: "gcc", "python", "java", "haskell" and "extra".
 
