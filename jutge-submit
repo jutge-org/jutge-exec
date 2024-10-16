@@ -24,3 +24,8 @@ jutge-sanitize
 tar czf - *
 cd ../..
 rm -rf $name
+
+# TODO(pauek): Integrate 'jutge-submit', 'jutge-start' and 'jutge-sanitize'
+# (probably the same with 'jutge-somhi').
+# These should all be a single script, and be called 'jutge-run-inside'
+# and be the entry point for Dockerfiles.
