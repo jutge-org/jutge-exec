@@ -33,7 +33,7 @@ if [ -t 1 ]; then # check if stdout is a TTY
 fi
 volume="-v $(pwd):/home/worker"
 user="-u $(id -u):$(id -g)"
-jail="--network=none"
+jail="--network=none --memory=1g --cpus=1"
 
 # Run it
 docker run --rm -i $term $jail $user $volume jutgeorg/$image $@
