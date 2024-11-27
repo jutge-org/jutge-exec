@@ -1,0 +1,163 @@
+#!/usr/bin/env python3
+# coding=utf-8
+
+"""
+This script is used to start correcting a submission.
+"""
+
+import argparse
+import logging
+import os
+import resource
+import socket
+import subprocess
+import sys
+import tarfile
+
+
+USERNAME = os.getenv("USER")
+HOSTNAME = socket.gethostname()
+
+
+def init_logging():
+    """Configures custom logging options."""
+    logging.basicConfig(
+        format="%s@%s " % (USERNAME, HOSTNAME)
+        + "%(asctime)s %(levelname)s %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
+    logging.getLogger("").setLevel(logging.NOTSET)
+
+
+def create_tgz(name, filenames, path=None):
+    """Creates a tgz file name with the contents given in the list of filenames.
+    Uses path if given."""
+    if name == "-":
+        tar = tarfile.open(mode="w|gz", fileobj=sys.stdout)
+    else:
+        tar = tarfile.open(name, "w:gz")
+    cwd = os.getcwd()
+    if path:
+        os.chdir(path)
+    for x in filenames:
+        tar.add(x)
+    if path:
+        os.chdir(cwd)
+    tar.close()
+
+
+def extract_tgz(name, path):
+    """Extracts a tgz file in the given path."""
+    if name == "-":
+        tar = tarfile.open(mode="r|gz", fileobj=sys.stdin)
+    else:
+        tar = tarfile.open(name, "r:gz")
+    for x in tar:
+        tar.extract(x, path)
+    tar.close()
+
+
+def main():
+    """main"""
+
+    init_logging()
+
+    parser = argparse.ArgumentParser(description="Correct a submission")
+    parser.add_argument("name")
+    parser.add_argument("--no-wrapping", action="store_true", help="do not wrap")
+    args = parser.parse_args()
+
+    wrapping = not args.no_wrapping
+
+    logging.info("name: %s" % args.name)
+    logging.info("wrapping: %s" % str(wrapping))
+
+    if wrapping:
+        logging.info("starting correction")
+        logging.info("cwd=%s" % os.getcwd())
+        logging.info("user=%s" % USERNAME)
+        logging.info("host=%s" % HOSTNAME)
+
+        logging.info("setting resource limits")
+
+        # FIXME(pauek): Determine the ideal number of processes to set here
+        #
+        # `setrlimit` counts processes by user, and will count existing processes
+        # in the kernel (which is actually on the host, since Docker is NOT a virtual
+        # machine), so the number of processes we set here is NOT the amount of
+        # processes created by ourselves, but the total for the current user
+        # (with whatever processes were running before).
+        # So here we should be setting a high-water mark, like the maximum of processes
+        # that we expect ever to have, so that a fork bomb would crash but normal
+        # programs would not.
+        #
+        # resource.setrlimit(resource.RLIMIT_NPROC, (1000, 1000))
+
+        limits = [
+            (resource.RLIMIT_CORE, (0, 0)),
+            (resource.RLIMIT_CPU, (300, 300)),
+            # (resource.RLIMIT_NPROC, (2048, 2048)),
+        ]
+        for a, b in limits:
+            resource.setrlimit(a, b)
+
+        logging.info("setting umask")
+        os.umask(0o077)
+
+        for part in ["submission", "problem", "driver"]:
+            logging.info("decompressing %s" % part)
+            os.mkdir(part)
+            extract_tgz("%s.tgz" % part, part)
+
+        for dir in ["solution", "correction"]:
+            logging.info("mkdir %s", dir)
+            os.mkdir(dir)
+
+        os.sync()
+
+    ## Execution of the driver
+    command = ["python3", "driver/judge.py", args.name]
+    logging.info("executing %s" % " ".join(command))
+    process = subprocess.Popen(
+        command,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        universal_newlines=True,
+    )
+    stdout, stderr = process.communicate()
+    with open("stdout.txt", "w") as stdout_file:
+        stdout_file.write(stdout)
+    with open("stderr.txt", "w") as stderr_file:
+        stderr_file.write(stderr)
+
+    return_code = process.returncode
+
+    logging.info("execution finished with return_code = %d" % return_code)
+    if return_code != 0:
+        logging.info("stdout: %s" % stdout)
+        logging.info("stderr: %s" % stderr)
+
+    os.rename("stderr.txt", "correction/stderr.txt")
+    os.rename("stdout.txt", "correction/stdout.txt")
+    os.system("chmod -R u+rwX,go-rwx .")
+
+    logging.info("end of correction")
+
+    if wrapping:
+        logging.info("compressing correction")
+        create_tgz("correction.tgz", ".", "correction")
+
+    logging.info("flushing and closing files")
+    sys.stdout.flush()
+    sys.stderr.flush()
+    sys.stdout.close()
+    sys.stderr.close()
+    sys.stdin.close()
+
+    # noinspection PyProtectedMember
+    os._exit(0)
+
+
+if __name__ == "__main__":
+    main()
