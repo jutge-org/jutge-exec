@@ -108,6 +108,7 @@ def main():
             logging.info("decompressing %s" % part)
             os.mkdir(part)
             extract_tgz("%s.tgz" % part, part)
+            os.remove("%s.tgz" % part)
 
         for dir in ["solution", "correction"]:
             logging.info("mkdir %s", dir)
