@@ -14,6 +14,10 @@ set -e
 name=$1
 ulimit -t 310
 umask 077
+#
+# TODO(pauek): Making this directory is not necessary (or at least it is not
+# necessary to name it after the first argument). We should simplify this.
+# 
 mkdir $name
 cd $name
 tar xf -
@@ -24,8 +28,9 @@ jutge-sanitize
 tar czf - *
 cd ../..
 rm -rf $name
-
+#
 # TODO(pauek): Integrate 'jutge-submit', 'jutge-start' and 'jutge-sanitize'
 # (probably the same with 'jutge-somhi').
 # These should all be a single script, and be called 'jutge-run-inside'
 # and be the entry point for Dockerfiles.
+#
