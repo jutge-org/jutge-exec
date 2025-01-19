@@ -72,6 +72,9 @@ def main():
     logging.info("name: %s" % args.name)
     logging.info("wrapping: %s" % str(wrapping))
 
+    # FIXME(pauek): The --no-wrapping option is not used, as far as I know.
+    # We should probably remove it, and always execute the code in this if.
+    #
     if wrapping:
         logging.info("starting correction")
         logging.info("cwd=%s" % os.getcwd())
@@ -139,6 +142,9 @@ def main():
         logging.info("stdout: %s" % stdout)
         logging.info("stderr: %s" % stderr)
 
+    # FIXME(pauek): Write directly to "correction/*.txt", 
+    # so that we don't have to move them afterwards.
+    #
     os.rename("stderr.txt", "correction/stderr.txt")
     os.rename("stdout.txt", "correction/stdout.txt")
     os.system("chmod -R u+rwX,go-rwx .")

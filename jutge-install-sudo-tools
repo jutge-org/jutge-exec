@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
-# This script is meant to be used inside the container
-# in order to install the latest version of jutge-vinga
-# and jutge-somhi.
-
+# FIXME(pauek): This scripts is now used right now since 
+# installation of these tools is done directly in the Dockerfiles.
+# See `Dockerfile.base` in the jutge-org/jutge-exec repository.
+# This file should be deleted.
 
 if [ "$1" == "-h" ] || [ "$1" == "--help" ] ; then
     echo "This script installs the latest version of jutge-vinga and jutge-somhi."
